@@ -1,7 +1,7 @@
 ######## Image Object Detection Using Tensorflow-trained Classifier #########
 #
-# Author: Evan Juras
-# Date: 1/15/18
+# Author: Elbert Widjaja, Hans Tananda, Margaret Koesno
+# Date: 10/14/2018
 # Description: 
 # This program uses a TensorFlow-trained classifier to perform object detection.
 # It loads the classifier uses it to perform object detection on an image.
@@ -9,11 +9,6 @@
 
 ## Some of the code is copied from Google's example at
 ## https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
-
-## and some is copied from Dat Tran's example at
-## https://github.com/datitran/object_detector_app/blob/master/object_detection_app.py
-
-## but I changed it to make it more understandable to me.
 
 # Import packages
 import os
@@ -33,10 +28,41 @@ sys.path.append("..")
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
-
+#==============================
+#for clasification
 FLAGS = None
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
+#======================================================================================
 
+
+#==================================================================================
+# for labeling and indexing
+# Name of the directory containing the object detection module we're using
+MODEL_NAME = 'ssd_mobilenet_v2_coco_2018_03_29'
+
+# Grab path to current working directory
+CWD_PATH = os.getcwd()
+
+# Path to frozen detection graph .pb file, which contains the model that is used
+# for object detection.
+PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
+
+# Path to label map file
+PATH_TO_LABELS = os.path.join('data', 'berry_label_map.pbtxt')
+
+# Load the label map.
+# Label maps map indices to category names, so that when our convolution
+# network predicts `5`, we know that this corresponds to `king`.
+# Here we use internal utility functions, but anything that returns a
+# dictionary mapping integers to appropriate string labels would be fine
+# label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
+# categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
+# category_index = label_map_util.create_category_index(categories)
+category_index = label_map_util.create_category_index_from_labelmap(PATH_TO_LABELS, use_display_name=True)
+#========================================================================================================
+
+#=========================================================================================
+#Classification purposes
 class NodeLookup(object):
     """Converts integer node ID's to human readable labels."""
 
@@ -162,105 +188,88 @@ def maybe_download_and_extract():
         statinfo = os.stat(filepath)
         print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
     tarfile.open(filepath, 'r:gz').extractall(dest_directory)
+#=======================================================================================
 
-# Name of the directory containing the object detection module we're using
-MODEL_NAME = 'ssd_mobilenet_v2_coco_2018_03_29'
-IMAGE_NAME = 'vid6.jpg'
-
-
-# Grab path to current working directory
-CWD_PATH = os.getcwd()
-
-# Path to frozen detection graph .pb file, which contains the model that is used
-# for object detection.
-PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
-
-# Path to label map file
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
-
-# Path to image
-PATH_TO_TEST_IMAGES_DIR = 'test_images'
-PATH_TO_IMAGE = os.path.join(PATH_TO_TEST_IMAGES_DIR,IMAGE_NAME)
-
-# Load the label map.
-# Label maps map indices to category names, so that when our convolution
-# network predicts `5`, we know that this corresponds to `king`.
-# Here we use internal utility functions, but anything that returns a
-# dictionary mapping integers to appropriate string labels would be fine
-# label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-# categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
-# category_index = label_map_util.create_category_index(categories)
-category_index = label_map_util.create_category_index_from_labelmap(PATH_TO_LABELS, use_display_name=True)
-
-
+#======================================================================================
+#labeling and indexing
 def main(_):
-    maybe_download_and_extract()
-    image = os.path.join(PATH_TO_TEST_IMAGES_DIR, IMAGE_NAME)
-    title_test = run_inference_on_image(image)
-    xx=1
-    for i in category_index:
-        category_index[i] = {'id':xx, 'name':title_test}
-        xx+=1
-    # Load the Tensorflow model into memory.
-    detection_graph = tf.Graph()
-    with detection_graph.as_default():
-        od_graph_def = tf.GraphDef()
-        with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
-            serialized_graph = fid.read()
-            od_graph_def.ParseFromString(serialized_graph)
-            tf.import_graph_def(od_graph_def, name='')
+    maybe_download_and_extract() # call the classification function
+    with open('images.txt', "r+", encoding="utf-8",errors='ignore') as f:
+        # Name of the image file
+        IMAGE_NAMES = f.readlines()
+        for IMAGE_NAME in IMAGE_NAMES:
+            IMAGE_NAME = IMAGE_NAME.strip()
+            print("\'"+IMAGE_NAME+"\'\n")
+            # Path to image
+            PATH_TO_TEST_IMAGES_DIR = 'test_images'
+            PATH_TO_IMAGE = os.path.join(PATH_TO_TEST_IMAGES_DIR,IMAGE_NAME)
+            
+            image = os.path.join(PATH_TO_TEST_IMAGES_DIR, IMAGE_NAME)
+            title_test = run_inference_on_image(image) #store the title
+            xx=1
+            for i in category_index:
+                category_index[i] = {'id':xx, 'name':title_test}
+                xx+=1
+            # Load the Tensorflow model into memory.
+            detection_graph = tf.Graph()
+            with detection_graph.as_default():
+                od_graph_def = tf.GraphDef()
+                with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+                    serialized_graph = fid.read()
+                    od_graph_def.ParseFromString(serialized_graph)
+                    tf.import_graph_def(od_graph_def, name='')
 
-        sess = tf.Session(graph=detection_graph)
+                sess = tf.Session(graph=detection_graph)
 
-    # Define input and output tensors (i.e. data) for the object detection classifier
+            # Define input and output tensors (i.e. data) for the object detection classifier
 
-    # Input tensor is the image
-    image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+            # Input tensor is the image
+            image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
 
-    # Output tensors are the detection boxes, scores, and classes
-    # Each box represents a part of the image where a particular object was detected
-    detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+            # Output tensors are the detection boxes, scores, and classes
+            # Each box represents a part of the image where a particular object was detected
+            detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
 
-    # Each score represents level of confidence for each of the objects.
-    # The score is shown on the result image, together with the class label.
-    detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
-    detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
+            # Each score represents level of confidence for each of the objects.
+            # The score is shown on the result image, together with the class label.
+            detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
+            detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
 
-    # Number of objects detected
-    num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+            # Number of objects detected
+            num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
-    # Load image using OpenCV and
-    # expand image dimensions to have shape: [1, None, None, 3]
-    # i.e. a single-column array, where each item in the column has the pixel RGB value
-    image = cv2.imread(PATH_TO_IMAGE)
-    image_expanded = np.expand_dims(image, axis=0)
+            # Load image using OpenCV and
+            # expand image dimensions to have shape: [1, None, None, 3]
+            # i.e. a single-column array, where each item in the column has the pixel RGB value
+            image = cv2.imread(PATH_TO_IMAGE)
+            image_expanded = np.expand_dims(image, axis=0)
 
-    # Perform the actual detection by running the model with the image as input
-    (boxes, scores, classes, num) = sess.run(
-        [detection_boxes, detection_scores, detection_classes, num_detections],
-        feed_dict={image_tensor: image_expanded})
+            # Perform the actual detection by running the model with the image as input
+            (boxes, scores, classes, num) = sess.run(
+                [detection_boxes, detection_scores, detection_classes, num_detections],
+                feed_dict={image_tensor: image_expanded})
 
-    # Draw the results of the detection (aka 'visulaize the results')
+            # Draw the results of the detection (aka 'visulaize the results')
 
-    vis_util.visualize_boxes_and_labels_on_image_array(
-        image,
-        np.squeeze(boxes),
-        np.squeeze(classes).astype(np.int32),
-        np.squeeze(scores),
-        category_index,
-        use_normalized_coordinates=True,
-        line_thickness=8,
-        min_score_thresh=0.80)
+            vis_util.visualize_boxes_and_labels_on_image_array(
+                image,
+                np.squeeze(boxes),
+                np.squeeze(classes).astype(np.int32),
+                np.squeeze(scores),
+                category_index,
+                use_normalized_coordinates=True,
+                line_thickness=8,
+                min_score_thresh=0.80)
 
-    # All the results have been drawn on image. Now display the image.
-    cv2.imwrite(os.path.join(PATH_TO_TEST_IMAGES_DIR,"Classified_"+IMAGE_NAME), image)
-    cv2.imshow("Result", image)
+            # All the results have been drawn on image. Now display the image.
+            cv2.imwrite(os.path.join(PATH_TO_TEST_IMAGES_DIR,"Classified_"+IMAGE_NAME), image)
+            # cv2.imshow("Result", image)
 
-    # Press any key to close the image
-    cv2.waitKey(0)
+            # Press any key to close the image
+            # cv2.waitKey(0)
 
-    # Clean up
-    cv2.destroyAllWindows()
+            # Clean up
+            cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':

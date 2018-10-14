@@ -1,21 +1,14 @@
 ######## Webcam Object Detection Using Tensorflow-trained Classifier #########
 #
-# Author: Evan Juras
-# Date: 1/20/18
+# Author: Elbert Widjaja, Hans Tananda, Margaret Koesno
+# Date: 10/14/2018
 # Description: 
 # This program uses a TensorFlow-trained classifier to perform object detection.
 # It loads the classifier uses it to perform object detection on a webcam feed.
 # It draws boxes and scores around the objects of interest in each frame from
 # the webcam.
 
-## Some of the code is copied from Google's example at
-## https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
-
-## and some is copied from Dat Tran's example at
-## https://github.com/datitran/object_detector_app/blob/master/object_detection_app.py
-
-## but I changed it to make it more understandable to me.
-
+## It is implemented from EdjeElectronic's github https://github.com/EdjeElectronics/TensorFlow-Object-Detection-API-Tutorial-Train-Multiple-Objects-Windows-10/blob/master/Object_detection_video.py
 
 # Import packages
 import os
@@ -32,7 +25,7 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 # Name of the directory containing the object detection module we're using
-MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
+MODEL_NAME = 'ssd_mobilenet_v2_coco_2018_03_29'
 
 # Grab path to current working directory
 CWD_PATH = os.getcwd()
@@ -42,7 +35,7 @@ CWD_PATH = os.getcwd()
 PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
 
 # Path to label map file
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join('data', 'berry_label_map.pbtxt')
 
 
 ## Load the label map.
